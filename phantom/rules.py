@@ -30,6 +30,7 @@ import collections
 import typing
 from types import NoneType
 from typing import Any, Callable, Optional, Union
+from action_result import ActionResult
 
 ACTION_ID_INGEST_ON_POLL: str = "on_poll"
 ACTION_ID_INGEST_ON_RECEIVE: str = "on_receive"
@@ -491,6 +492,24 @@ def _set_status(container=None, status=None, trace=False):
 
 def act(action=None, parameters=None, assets=None, tags=None, callback=None, reviewer=None, handle=None,
         start_time=None, name=None, asset_type=None, app=None, parent_action=None, loop_state=None):
+    """
+    The act API can be called from on_start() or the callback of any phantom.act() call. If multiple phantom.act() calls are called within the same function, they execute actions in parallel. If the action is executed on an asset that has primary approvers assigned or a reviewer specified, the action is not executed unless the primary approvers or reviewer approves the action.
+
+    :param action: The name of the action that the user intends to run. Actions include block IP, list VM, or file reputation that are supported by the apps installed on the platform.
+    :param parameters: A list of dictionaries that contain the parameters expected by the action. The name of the keys are specific to the action being taken.
+    :param assets: A list of assets on which the action is run. If the user intends to take the action on a specific asset, it must be specified in this parameter. Assets are a list of asset IDs, as specified when an asset is configured. If the assets are configured with primary and secondary owners, the owners are required to approve an action before it can be run. If the asset is not specified, the action is run on all possible assets on which the action can be run. If multiple apps provide the same action for the same product, the system automatically uses the latest installed app.
+    :param tags: A list of asset tags that help specify certain assets to be used for executing the action. You can assign assets a tag when they are configured. For example, if the asset is tagged critical and the action is block IP, the action is run only on assets that are tagged as critical. If tags and assets are both specified, then the action is run only on assets tagged with the matching tag.
+    :param callback: A specified callback function to be called upon completion of the action. Use the callback to evaluate the outcome of one action and then take more actions. Use the callback function to either serialize actions where you intend to run the actions one after the other, or where the subsequent action is dependent on the outcome or results of the first action.
+    :param reviewer: A username, email address, or group that receives an approval request to review the action before it is run. The user receives an approval request with all of the details of the action and its parameters. If Splunk SOAR (On-premises) is provided a comma-separated list or group, only one approval by any member of the list is required. SLA escalation settings affect how long the action is held for approval.
+    :param handle: An object that, when specified, is passed on to the callback. Users can save any Python object that the user needs to access in the context of the callback from the action called. Handle is always saved with the action and passed to the callback. It is best to use handles to pass objects from action to callbacks instead of global variables.
+    :param start_time: The time when the action is scheduled for execution. This value is a datetime object.
+    :param name: A name the user can give to an instance of an action that is run.
+    :param asset_type: Use the asset_type parameter to limit the action on assets of the specified type. This parameter can be a string or a list of strings.
+    :param app: The specific app used to run the action. Specify the app as a Python dictionary: {"name":"some_app_name", "version":"x.x.x"}. "name" is case insensitive.
+    :param parent_action:
+    :param loop_state:
+    :return:
+    """
     return
 
 
@@ -738,16 +757,51 @@ def comment(container: int | dict = None, comment: str = None, trace: bool = Fal
 def completed(action_names: Optional[collections.abc.Sequence[str]] = None,
               playbook_names: Optional[collections.abc.Sequence[str]] = None,
               cus_names: Optional[collections.abc.Sequence[str]] = None, trace: bool = False) -> bool:
+    """
+    The completed API checks if all of the provided runnables have finished running. Runnables are defined as actions, synchronous child playbooks, and custom functions. A runnable is finished running if its status is either succeeded or failed. Succeeded or failed implies that the action is done. If any combination of the action names, playbook names, or custom function names are not completed, then the function returns False. Use the completed API in the join function where certain blocks are run in parallel but the next block has to be called only when all the joining blocks have completed executing.
+
+    :param action_names: A list of names given to an action through the phantom.act() API in the parameter name.
+    :param playbook_names: A list of names given to a playbook execution using phantom.playbook() API in the parameter name.
+    :param cus_names: A list of names given to a custom function using the phantom.custom_function API in the parameter name.
+    :param trace:
+    :return:
+    """
     return True
 
 
 def concatenate(*args, **kwargs):
+    """
+    The completed API combines all arguments together into a list. If an argument is, itself, a list, the API will concatenate that list to the rest of the arguments, or append it to the list the API is creating. In this case, the final list will not have embedded lists. This is a shallow flattening - if an argument is a list of lists, the final resulting list will include some values as lists.
+
+    :param args:
+    :param kwargs:
+    :return:
+    """
     return
 
 
 def condition(container=None, action_results=None, conditions=None, logical_operator='or', scope=None,
               filtered_artifacts=None, filtered_results=None, limit=None, trace=False, name=None, auto=True,
               case_sensitive=True, handle=None, delimiter: Optional[str] = ','):
+    """
+    The condition API implements the decision block in the visual playbook editor (VPE). It evaluates expressions and returns matching artifacts and actions results that evaluate as true. Each filter block you create in the VPE calls condition.
+
+    :param container: The container dictionary object that is passed into the calling function.
+    :param action_results: The action results passed into any callback function or a subset of action results that had been filtered from a condition call. When you pass action results, you can also pass in custom function results. In other words, action results can be both action results and custom function results.
+    :param conditions: A list of one or more and or or expressions to be evaluated. Matching artifacts or matching action results are returned.
+    :param logical_operator: Expresses the relationship between conditions. Valid logical operators are and or or. Defaults to or.
+    :param scope: See collect. Possible values include new, all, or an artifact ID.
+    :param filtered_artifacts: Filtered artifacts that were returned from a preceding condition block.
+    :param filtered_results: Filtered results that were returned from a preceding condition block.
+    :param limit: This parameter enforces the maximum number of artifacts that can be retrieved in this call. If the limit parameter is not specified, the limit is 2000. Specifying a number larger than 2000 is not recommended. For details, see the note before this table.
+    :param trace: Trace is a flag related to the level of logging. If trace is on (True), more logging is enabled. When set to True, more detailed output is displayed in debug output.
+    :param name: Specify a unique name to save the filtered action results and filtered artifacts to retrieve using either the collect2() API or phantom.get_filtered_data() API.
+    :param auto: A Boolean value where the default is True. When this value is True, remove the database record associated with the filtered data once the playbook run has finished.
+    :param case_sensitive: Default is True. Set to False for evaluating conditions in a case-insensitive manner.
+    :param handle: An object that, when specified, is passed on to the callback. Users can save any Python object that the user needs to access in the context of the callback from the action called. Handle is always saved with the action and passed to the callback. It is best to use handles to pass objects from action to callbacks instead of global variables.
+    :param delimiter: Default is ",". For fields in artifacts (CEF fields). Set this value to any string to split the artifact's value by that string and treat the results as a list. Set to None to disable the splitting behavior. Default behavior of splitting on commas is deprecated. Avoid comma separation, because some CEF fields might contain commas and cause unexpected results in a list.
+    :return:
+    """
     return
 
 
@@ -781,6 +835,19 @@ def cus(cus=None, parameters=None, callback=None, name=None, loop_state=None):
     return
 
 
+def custom_function(custom_function: str = None, parameters: list[dict] = None, callback: Callable = None,
+                    name: str = None):
+    """
+    Use the custom_function API to call a custom function from a playbook. The following table describes the parameters used in this function.
+
+    :param custom_function: The custom function identifier. The Visual Playbook Editor (VPE) generates this identifier for you if you select your custom function through the configuration panel. Otherwise, use the following format:
+    :param parameters: A list of dictionaries containing the inputs to pass to the custom function callback. The shape of the dictionaries that are in the parameters list depends on what custom function you are calling.
+    :param callback: A callable object with a certain function signature. It is typically a function or possibly any Python callable. Invoke the object that you provide as the callback parameter as follows:
+    :param name: The name of the custom function block. This is autogenerated by the VPE, but you can specify your own name from the configuration panel for the block using Advanced Settings > General Settings > Name. If you are not using the VPE, be aware that the name must be unique amongst all of the names in your playbook. For example, you cannot use the same name as an action elsewhere in the playbook.
+    :return:
+    """
+
+
 def datastore_add(list_name, values):
     return
 
@@ -805,7 +872,13 @@ def datastore_set(list_name, values_list_of_lists):
     return
 
 
-def debug(message):
+def debug(message: str = None):
+    """
+    When logging is enabled, the debug API lets the author debug as the playbook is being developed and tested. This is similar to a print() statement. The parameter for the call is a string type object and the contents are shown in the debug console in cyan text so that you can distinguish your text from the system text.
+
+    :param message: string to print
+    :return:
+    """
     return
 
 
@@ -817,9 +890,27 @@ def debug_private_message_(message: Any) -> None:
     return
 
 
-def decision(container=None, action_results=None, conditions=None, logical_operator='or', scope=None,
+def decision(container: dict, action_results: ActionResult = None, conditions=None, logical_operator='or', scope=None,
              filtered_artifacts=None, filtered_results=None, limit=None, trace=False, name=None, auto=True,
              case_sensitive=True, delimiter: Optional[str] = ','):
+    """
+    Decision blocks in the Visual Playbook Editor generate calls to the decision API. The decision API returns a Boolean value to indicate decision success or failure. You can have up to five such True/False outcomes.
+
+    :param container: The container dictionary object that is passed into the calling function.
+    :param action_results: The action results passed into any callback function or a subset of action results that were filtered from a phantom.condition() call. When you pass in action results, you can also pass in custom function results. Action results can be both action results and custom function results.
+    :param conditions: A list of one or more and or or expressions to be evaluated. Matching artifacts or matching action results are returned.
+    :param logical_operator: Expresses the relationship between conditions. Valid logical operators are and or or. Defaults to or. If the logical operator is and then each expression passed to the condition must be true on the same result, if the expression relates to a result, for decision to return true. Potential result types are artifacts, action results, or custom function results.
+    :param scope: See the collect API documentation. Possible values include new, all, or an artifact ID.
+    :param filtered_artifacts: Filtered artifacts that were returned from a preceding phantom.condition() block.
+    :param filtered_results: Filtered results that were returned from a preceding phantom.condition() block.
+    :param limit: This enforces the maximum number of artifacts that can be retrieved in this call. The default is 100.
+    :param trace: Trace is a flag related to the level of logging. If trace is on (True), more logging is enabled. When set to True, more detailed output is displayed in debug output.
+    :param name: Specify a unique name to save the filtered action results and filtered artifacts which can be retrieved using either the collect2() API or the phantom.get_filtered_data() API.
+    :param auto: A Boolean value where the default is True. When this value is True, remove the database record associated with the filtered data once the playbook run has finished.
+    :param case_sensitive: Default is True. Set to False for evaluating conditions in a case-insensitive manner.
+    :param delimiter: Default is ",". For fields in artifacts (CEF fields). Set this value to any string to split the artifact's value by that string and treat the results as a list. Set to None to disable the splitting behavior. Default behavior of splitting on commas is deprecated. Avoid comma separation, because some CEF fields might contain commas and cause unexpected results in a list.
+    :return:
+    """
     return
 
 
@@ -883,6 +974,11 @@ def delete_pin(pin_id: int = None) -> tuple[bool, str]:
 
 
 def discontinue() -> None:
+    """
+    The discontinueAPI allows the users to stop executing active playbooks when a container is being processed against Active playbooks.
+
+    :return:
+    """
     return
 
 
@@ -923,6 +1019,12 @@ def encode_unicode_tuple(args):
 
 
 def error(message):
+    """
+    The error API lets the author debug or print log messages as the playbook is run with logging disabled. This is similar to a print() statement. The parameter for the call is a string type object and the contents are shown in the playbook debug console in red text so that you can distinguish your text from the system text.
+
+    :param message: text to print
+    :return:
+    """
     return
 
 
@@ -949,6 +1051,20 @@ def fix_datapath(datapath, trace=False):
 
 def format(container=None, template=None, parameters=None, scope=None, filter_artifact_ids=None, name=None, trace=False,
            separator=None, drop_none=False):
+    """
+    The format API formats text with values that are extracted using datapaths for other complex objects such as artifacts or action results.
+
+    :param container: The container object passed into the action callback or on_start.
+    :param template: The format string where positional arguments are substituted with values. The arguments are expressed and passed as a list of datapaths in the parameters argument. If the datapath returns a list of items, the positional argument is replaced by a comma-separated value of the items. The format string uses positional arguments that are the same as Python string formatting.
+    :param parameters: A list of datapaths with a corresponding datapath for each positional format argument used in the template string.
+    :param scope: See collect for more information. The default value for scope is new, but the values can be either all or new.
+    :param filter_artifact_ids:
+    :param name: The name used to save the resulting formatted data. Use this name to retrieve this parameter through the get_format_data() API. If this parameter is not specified, the data is not saved.
+    :param trace: Trace is a flag related to the level of logging. If trace is on (True), more logging is enabled. When set to True, more detailed output is displayed in debug output.
+    :param separator: If a datapath response contains a list of strings or numbers, but not Python objects, the default output separator is ', '. You can specify an alternate separator using this parameter.
+    :param drop_none: The default value is False. By default None values are included in the resulting string, but the user can filter None type values in the resulting string through this parameter.
+    :return:
+    """
     return
 
 
@@ -1468,6 +1584,22 @@ def pin(container: int | dict = None, message: str = None, data: str = None, pin
 
 def playbook(playbook=None, container=None, handle=None, show_debug=True, callback=None, name=None, inherit_scope=True,
              inputs=None, loop_state=None):
+    """
+    The playbook API enables users to call another playbook from within the current playbook. If there are two or more playbooks with the same name from different repositories, the call fails. As such, use the format "repo_name/playbook_name" to be specific. The playbook API returns the playbook_run_id that can be used to query corresponding playbook execution details and report.
+
+    :param playbook: The playbook name to run. Use the format "repo_name/playbook_name".
+    :param container: The container JSON object that needs to be passed to run the playbook on. This is the same container JSON object that you get in on_start() or any other callback function.
+    :param handle: An object that you can pass to the API that is passed back to the callback when the playbook finishes execution.
+    :param show_debug: The default for this parameter is False, but if you set it to True, the debug messages of the launched playbook is shown in the debug window when you debug the caller playbook.
+    :param callback: If this parameter is specified, the playbook is launched in a synchronous fashion. When the child playbook finishes, the specified callback function is called with playbook execution results. When child playbooks are launched synchronously, the parent playbook is not considered completed until the called child playbook has finished executing. If this parameter is specified, you must also specify the name parameter.
+    :param name: An optional parameter, unless the callback parameter is specified. The name can be any unique identifier for this playbook run. If the code for calling the child playbook is auto-generated, the name of the playbook block that called this playbook populates automatically.
+    :param inherit_scope: Default is True. This parameter implies that the child playbook inherits the scope settings from the parent when called. If set to false, the child playbook runs with the default playbook scope.
+    :param inputs: If specified, this value must be a JSON-serializable dictionary of one or more key/value pairs, passed as an input for the child playbook that is called. Find the input specifications in the input_spec field, either in the user interface or in the REST API. Be sure both of the following are true:
+                -The child playbook that is called must be an input playbook, not an Automation playbook.
+                - The inputs you provide must be valid for the child playbook.
+    :param loop_state:
+    :return:
+    """
     return
 
 
@@ -1500,12 +1632,49 @@ def promote(container: int | dict = None, template: int | str = None, trace: boo
 
 def prompt(user=None, message='', respond_in_mins=30, callback=None, name=None, options=None, parameters=None,
            container=None, scope=None, filter_artifact_ids=None, trace=False, separator=None, drop_none=False):
+    """
+    Using phantom.prompt() results in a message sent to the specified approvers.
+
+    :param user: The recipient in the form of a user email address, username, or a role. Must be a valid user or role in Splunk SOAR (On-premises).
+    :param message: The message content to send.
+    :param respond_in_mins: The time the user is given to respond. Default is 30 minutes. If the user does not respond in the specified time, the prompt fails and a failed status is sent to the callback.
+    :param callback: This parameter the same prototype as action callbacks. Status indicates success when the user has responded to the action and is failure only when the user does not respond in the specified time. The results JSON has the same format as any action results. Handle is not used and is an empty object.
+    :param name: The name of the action.
+    :param options: A JSON dictionary. Allows the user response to display with programmed choices.
+    :param parameters: A list of datapaths whose values are used to format the message. Recognized datapaths are used to retrieve data, and the data is used to populate the curly brackets in the message. The first parameter replaces {0}, the second replaces {1}, and so on.
+    :param container: The object that is associated with the current playbook execution. This object is available to all action callbacks and other playbook execution functions.
+    :param scope: The scope can either be new or all. Default value is new. See collect for more information.
+    :param filter_artifact_ids:
+    :param trace: Trace is a flag related to the level of logging. If trace is on (True), more logging is enabled. When set to True, more detailed output is displayed in debug output.
+    :param separator: Specify an alternate separator using this parameter. If a datapath response contains a list, the default output separator is ', '.
+    :param drop_none: By default, the None values are included in the resulting string.
+    :return:
+    """
     return
 
 
 def prompt2(user=None, respond_in_mins=30, callback=None, response_types=None, message='', parameters=None, name=None,
             container=None, scope=None, filter_artifact_ids=None, separator=None, drop_none=False, trace=False,
             role=None):
+    """
+    The prompt2 API is similar to the prompt API, but with prompt2 you can create a prompt with multiple user input fields. In prompt2, the options parameter is replaced by the response_types parameter. The other parameters are the same as in the prompt API. See prompt.
+
+    :param user: The recipient in the form of a user email address or username. Must be a valid user in Splunk SOAR (On-premises).
+    :param respond_in_mins: The time the user is given to respond. The default is 30 minutes. If the user does not respond in the specified time, the prompt fails and a failed status is sent to the callback.
+    :param callback: This parameter has the same prototype as action callbacks. Status indicates success when the user has responded to the action and is failure only when the user does not respond in the specified time. The results JSON has the same format as any action results. Handle is not used and is an empty object.
+    :param response_types: The list of JSON dictionaries describing each input field in the prompt.
+    :param message: The message content to send.
+    :param parameters: A list of datapaths whose values are used to format the message. Recognized datapaths are used to retrieve data, and the data is used to populate the curly brackets in the message. The first parameter replaces {0}, the second replaces {1}, and so on.
+    :param name: The name of the prompt.
+    :param container: The container object associated with the current playbook execution. This object is available to all action callbacks and other playbook execution functions.
+    :param scope: Can either be new or all. Default value is new. See collect.
+    :param filter_artifact_ids:
+    :param separator: Specify an alternate separator using this parameter. If a datapath response contains a list, the default output separator is ', '.
+    :param drop_none: By default, the None values are included in the resulting string.
+    :param trace: Trace is a flag related to the level of logging. If trace is on (True), more logging is enabled. When set to True, more detailed output is displayed in debug output.
+    :param role: The recipient in the form of a role. For automated playbooks, set the role to Automation. Must be a valid role in Splunk SOAR (On-premises).
+    :return:
+    """
     return
 
 
@@ -1537,6 +1706,13 @@ def remove_tags(container: int | dict = None, tags: str | list[str] = None, trac
 
 
 def render_template(template, context):
+    """
+    The render_template API accepts a Django 1.11 template and fills the variable fields with contextual information from a provided dictionary. The template must follow the template language format and it can render any of the text-based formats such as HTML, XML, CSV, and so on. Common uses of the template are for user prompts or case management updates. Additional information about Django 1.11 templates can be found by searching on the Django Project home page.
+
+    :param template: The Django 1.11 template.
+    :param context: Dictionary of values used to populate variable fields in the Django template.
+    :return:
+    """
     return
 
 
@@ -1678,7 +1854,7 @@ def set_parent_handle(handle):
     return
 
 
-def set_phase(container:int|dict=None, phase:str|int=None, trace:bool=False) -> tuple[bool, str]:
+def set_phase(container: int | dict = None, phase: str | int = None, trace: bool = False) -> tuple[bool, str]:
     """
     Use the set_owner API to dynamically assign a container or task to a user or role. Upon completion, the API returns
     a tuple of a success flag and a message, if available.
@@ -1723,16 +1899,16 @@ def set_severity(container: dict, severity: str):
     return
 
 
-def set_status(container:int|dict=None, status:str=None, trace:bool=False) -> tuple[bool, str]:
+def set_status(container: int | dict = None, status: str = None, trace: bool = False) -> tuple[bool, str]:
     """
     Use the set_status API to update the status of a container. Returns a tuple of a success flag and a message, if
-    available. 
-    
-    :param container: The container to act on. This parameter can either be a numerical ID or a container object. If no 
-        container is provided, the currently running container is used. 
-    :param status: Set the status of either new, open, resolved, closed, or a custom status defined by an administrator. 
+    available.
+
+    :param container: The container to act on. This parameter can either be a numerical ID or a container object. If no
+        container is provided, the currently running container is used.
+    :param status: Set the status of either new, open, resolved, closed, or a custom status defined by an administrator.
     :param trace: Trace is a flag related to the level of logging. If trace is on (True), more logging is enabled. When
-        set to True, more detailed output is displayed in debug output. 
+        set to True, more detailed output is displayed in debug output.
     :return: [status, message]
     """
     return True, "success"
@@ -1744,6 +1920,16 @@ def set_task_owner(container, task_id, owner, trace=False) -> tuple[
 
 
 def task(user=None, message=None, respond_in_mins=0, callback=None, name=None):
+    """
+    The task API is a specialization of a manual action to ask a user or a role to perform work in the course of a response workflow or playbook.
+
+    :param user: The person or a role to whom the task is assigned.
+    :param message: The text that has the information or details of the task.
+    :param respond_in_mins: The time given to the user to perform the task, after which the task fails and the status is expressed in the callback if it was specified.
+    :param callback: A callback function to be called when the task completes.
+    :param name: A unique name to distinguish this action from other actions
+    :return:
+    """
     return
 
 
@@ -1767,7 +1953,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
     return
 
 
-def update(container: dict, update: dict, unify_datetime_format: bool=False) -> tuple[bool, str]:
+def update(container: dict, update: dict, unify_datetime_format: bool = False) -> tuple[bool, str]:
     """
     Use the update API to make an update to a container. It returns a tuple of a success flag and any response messages.
 
@@ -1780,7 +1966,8 @@ def update(container: dict, update: dict, unify_datetime_format: bool=False) -> 
     return True, "success"
 
 
-def update_pin(pin_id:int=None, message:str=None, data:str=None, pin_type:str=None, pin_style:str=None, trace:bool=False) -> tuple[bool, str]:
+def update_pin(pin_id: int = None, message: str = None, data: str = None, pin_type: str = None, pin_style: str = None,
+               trace: bool = False) -> tuple[bool, str]:
     """
     Use the update_pin API to update an existing pin. Upon completion, this API returns a success flag and a message.
 

@@ -8,3 +8,11 @@ Plase the `phantom` folder inside the working directory for your app or playbook
 ```powershell
 tar --exclude ".\phMy-App\phantom" -czvf ".\phMy-App.tar.gz" ".\phMy-App"
 ```
+
+## What's Inside
+
+- **action_results.py**: Contains the `ActionResult` class
+- **app.py**: Contains the API functions available to phantom apps
+- **base_connector.py**: Contains the `BaseConnector` class
+- **rules.py**: Contains the API functions available to phantom playbooks
+- **vault.py**: Contains the vault API functions and the `Vault` class

@@ -6,7 +6,7 @@ A collection of files to store locally to develop your Splunk Phantom applicatio
 Plase the `phantom` folder inside the working directory for your app or playbook. When creating your tarball package, exclude it from the files:
 
 ```powershell
-tar --exclude ".\phMy-App\phantom" --exclude ".\phMy-App\encryption_helper.py" -czvf ".\phMy-App.tar.gz" ".\phMy-App"
+tar --exclude "phantom" --exclude "encryption_helper.py" -czvf ".\phMy-App.tar.gz" ".\phMy-App"
 ```
 
 ## What's Inside
